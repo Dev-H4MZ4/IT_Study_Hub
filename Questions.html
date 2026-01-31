@@ -135,7 +135,7 @@
         /* HEADER */
         header {
             padding: 15px 25px;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: flex-start; align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             flex-shrink: 0; gap: 10px;
         }
@@ -145,7 +145,7 @@
             text-shadow: 0 0 10px var(--neon-blue); transition: all 0.8s; margin: 0;
         }
 
-        .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+        .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-start; }
 
         .btn-neon {
             background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue);
@@ -317,11 +317,12 @@
                 <h1>Exam System</h1>
                 <span style="font-size: 0.75rem; color: #888; letter-spacing: 2px;">V2.0 MOBILE READY</span>
             </div>
-            <div class="controls">
-                <div id="timer" style="font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight:bold; color: #ddd;">00:00</div>
-                <button class="btn-neon" id="translateBtn">TRANSLATE: OFF</button>
-                <button class="btn-neon" id="homeBtn">HOME</button>
-            </div>
+        <div class="controls">
+            <a href="index.html" class="btn-neon" style="text-decoration: none; display: flex; align-items: center;">HOME</a>
+            <button class="btn-neon" id="homeBtn">BACK</button>
+            <button class="btn-neon" id="translateBtn">TRANSLATE: OFF</button>
+            <div id="timer" style="font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight:bold; color: #ddd;">00:00</div>
+        </div>
         </header>
 
         <div id="app-content">
@@ -329,7 +330,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                     <h2 style="margin:0; font-size:1.4rem;">Select Model</h2>
                     <div class="toggle-wrapper" onclick="toggleShuffle()">
-                        <span>Shuffle Questions</span>
+                        <span>Mix Questions</span>
                         <div class="toggle-switch" id="shuffleToggle"></div>
                     </div>
                 </div>
