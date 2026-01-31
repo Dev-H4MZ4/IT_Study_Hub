@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IT Study Hub</title>
+    <style>
+        /* =========================================
+           1. CORE STYLES & FONTS
+           ========================================= */
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Segoe+UI:wght@400;600;700&display=swap');
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --highlight: #facc15;
+            --highlight-bg: rgba(250, 204, 21, 0.15);
+            --success: #22c55e;
+            --error: #ef4444;
+            --radius: 16px;
+            --font-en: 'Segoe UI', sans-serif;
+            --font-ar: 'Cairo', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background-color: var(--bg); color: var(--text); 
+            min-height: 100vh; display: flex; flex-direction: column; 
+            font-family: var(--font-en); overflow-x: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px);
+            padding: 0.8rem 1.5rem; position: fixed; width: 100%; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .logo { font-weight: 900; font-size: 1.3rem; color: var(--primary); letter-spacing: 1px; }
+        
+        nav { display: flex; gap: 0.5rem; }
+        nav button {
+            background: transparent; border: 1px solid transparent; color: var(--text-muted);
+            padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; border-radius: 10px; transition: 0.3s;
+            display: flex; align-items: center; gap: 5px; font-size: 0.9rem;
+        }
+        nav button:hover { background: rgba(255,255,255,0.05); color: white; }
+        nav button.active { background: rgba(99, 102, 241, 0.15); color: var(--primary); border-color: rgba(99, 102, 241, 0.3); }
+
+        /* --- LAYOUT --- */
+        main { margin-top: 80px; padding: 1.5rem; max-width: 1000px; margin-left: auto; margin-right: auto; width: 100%; flex: 1; }
+        
+        .section { display: none; opacity: 0; transform: translateY(10px); transition: 0.4s ease; }
+        .section.active { display: block; opacity: 1; transform: translateY(0); }
+
+        /* UTILS */
+        .hl-word { background: var(--highlight-bg); color: var(--highlight); padding: 0 4px; border-radius: 4px; border-bottom: 2px solid var(--highlight); }
+        .input-style {
+            background: var(--surface); border: 2px solid rgba(255,255,255,0.05);
+            padding: 1rem; border-radius: 12px; color: white; font-size: 1rem; transition: 0.3s;
+            width: 100%; 
+        }
+        .input-style:focus { border-color: var(--primary); }
+        
+        .btn { padding: 1rem; border-radius: 50px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 1.1rem; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.1); color: white; }
+        .btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--error); border: 1px solid var(--error); padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 8px; }
+
+        /* --- TOGGLE SWITCH --- */
+        .toggle-container {
+            display: flex; align-items: center; justify-content: space-between; 
+            background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .toggle-label { font-size: 0.9rem; font-weight: bold; color: var(--text); }
+        .toggle-switch {
+            position: relative; display: inline-block; width: 50px; height: 26px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #4b5563; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* =========================================
+           2. VIEW: DICTIONARY
+           ========================================= */
+        .controls { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        .dict-card {
+            background: var(--surface); border-radius: 16px; padding: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;
+            position: relative; overflow: hidden;
+        }
+        .dict-card::before { content:''; position: absolute; left:0; top:0; bottom:0; width:4px; background:var(--primary); }
+        .dict-left { flex: 1; padding-right: 2rem; }
+        .dict-def { font-size: 1.1rem; line-height: 1.5; color: #e2e8f0; margin-bottom: 0.5rem; }
+        .dict-ar { font-family: var(--font-ar); color: var(--text-muted); direction: rtl; font-size: 0.95rem; }
+        .dict-right { text-align: right; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem; min-width: 250px; }
+        .dict-term { font-size: 1.2rem; font-weight: 800; color: var(--primary); margin-bottom: 0.2rem; }
+        .dict-term-ar { font-family: var(--font-ar); font-size: 1rem; color: white; }
+        .dict-ch { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.5rem; font-weight: bold; }
+
+        /* =========================================
+           3. VIEW: FLASHCARDS
+           ========================================= */
+        .fc-container { display: flex; flex-direction: column; align-items: center; min-height: 65vh; justify-content: center; }
+        .scene { width: 100%; max-width: 700px; height: 420px; perspective: 2000px; cursor: pointer; margin-bottom: 1.5rem; }
+        .flashcard {
+            width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform-style: preserve-3d; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .flashcard.is-flipped { transform: rotateY(180deg); }
+        .card-face {
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+            display: flex; flex-direction: column; 
+            background: var(--surface); border: 2px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 2rem;
+            background-image: linear-gradient(145deg, var(--surface) 0%, #1e293b 100%);
+            overflow: hidden; 
+        }
+        .card-face.front { text-align: center; }
+        .fc-header { color: var(--primary); font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; margin-bottom: auto; }
+        .fc-content { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }
+        .fc-text { font-weight: 700; color: #f1f5f9; line-height: 1.4; transition: font-size 0.2s; }
+        .size-lg { font-size: 1.6rem; }
+        .size-md { font-size: 1.3rem; }
+        .size-sm { font-size: 1.1rem; line-height: 1.5; }
+        .size-xs { font-size: 0.9rem; line-height: 1.5; }
+        .fc-ar { font-family: var(--font-ar); color: var(--text-muted); margin-top: 1rem; font-size: 1.1rem; direction: rtl; }
+        .fc-footer { margin-top: auto; font-size: 0.75rem; opacity: 0.5; }
+        .card-face.back { transform: rotateY(180deg); background: var(--primary); border: none; justify-content: center; align-items: center; text-align: center; }
+        .fc-term-back { font-size: 2.2rem; font-weight: 800; color: white; margin-bottom: 0.5rem; line-height: 1.2; }
+        .fc-ar-back { font-size: 1.5rem; color: rgba(255,255,255,0.9); font-family: var(--font-ar); }
+        .fc-controls { display: flex; gap: 1rem; width: 100%; justify-content: center; }
+        .fc-controls .btn { padding: 0.8rem 1.5rem; font-size: 1rem; }
+
+        /* =========================================
+           4. VIEW: GAME MODE
+           ========================================= */
+        .game-wrapper {
+            background: var(--surface); border-radius: 24px; padding: 1.5rem;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6); max-width: 850px; margin: 0 auto; min-height: 600px;
+            display: flex; flex-direction: column; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .setup-screen { text-align: center; display: flex; flex-direction: column; justify-content: center; flex: 1; }
+        .game-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .ch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem; margin-bottom: 1rem; }
+        .ch-toggle {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.8rem 0.5rem;
+            border-radius: 12px; cursor: pointer; color: var(--text-muted); font-weight: bold; font-size: 0.9rem; transition: 0.2s;
+        }
+        .ch-toggle.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .lives-select { display: flex; gap: 0.5rem; justify-content: center; margin: 1.5rem 0; }
+        .life-opt { 
+            padding: 0.8rem 1.2rem; background: rgba(255,255,255,0.05); border-radius: 12px; cursor: pointer; 
+            border: 2px solid transparent; font-weight: bold; font-size: 0.9rem;
+        }
+        .life-opt.selected { border-color: var(--primary); background: rgba(99, 102, 241, 0.2); }
+
+        .hud { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .lives { font-size: 1.4rem; letter-spacing: 2px; }
+        .score { font-size: 1.8rem; font-weight: 800; color: var(--success); font-family: monospace; }
+        
+        /* New Progress Bar for "No Repeat" Mode */
+        .progress-container { width: 100%; background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; margin-top: 5px; overflow: hidden; display: none; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
+
+        .q-area { flex: 1; text-align: center; margin-bottom: 1.5rem; display: flex; flex-direction: column; justify-content: center; }
+        .q-text { font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.4; }
+        .q-ar { font-family: var(--font-ar); color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 0.8rem 1rem; border-radius: 12px; display: inline-block; font-size: 1rem; }
+
+        .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .opt-btn {
+            background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1);
+            padding: 1.2rem; border-radius: 16px; cursor: pointer; text-align: center; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .opt-btn:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
+        .opt-btn.correct { background: rgba(34, 197, 94, 0.2); border-color: var(--success); }
+        .opt-btn.wrong { background: rgba(239, 68, 68, 0.2); border-color: var(--error); opacity: 0.6; }
+
+        .game-over { display: none; text-align: center; flex-direction: column; justify-content: center; height: 100%; }
+        .final-score { font-size: 4rem; font-weight: 900; color: white; margin: 1rem 0; }
+
+        @media (max-width: 768px) {
+            header { padding: 0.8rem 1rem; flex-direction: column; gap: 0.8rem; }
+            nav { width: 100%; justify-content: center; }
+            main { margin-top: 110px; padding: 1rem; }
+            .controls { flex-direction: column; gap: 0.8rem; }
+            .dict-card { flex-direction: column; align-items: flex-start; text-align: left; }
+            .dict-right { text-align: left; border-left: none; border-top: 1px solid rgba(255,255,255,0.1); padding-left: 0; padding-top: 1rem; width: 100%; margin-top: 1rem; display: flex; flex-direction: column; align-items: flex-start;}
+            .dict-ar { text-align: right; width: 100%; }
+            .scene { height: 400px; }
+            .fc-text.size-lg { font-size: 1.4rem; }
+            .game-wrapper { padding: 1rem; }
+            .opt-grid { grid-template-columns: 1fr; }
+            .q-text { font-size: 1.2rem; }
+            .lives-select { flex-wrap: wrap; }
+        }
+        
+        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-6px);} 75% {transform: translateX(6px);} }
+        .shake-it { animation: shake 0.4s ease-in-out; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">IT STUDY <span style="color:white">HUB</span></div>
+    <nav>
+        <button onclick="switchTab('list')" class="active" id="btn-list">Dict</button>
+        <button onclick="switchTab('flash')" id="btn-flash">Cards</button>
+        <button onclick="switchTab('game')" id="btn-game">Quiz</button>
+    </nav>
+</header>
+
+<main>
+    <div id="view-list" class="section active">
+        <div class="controls">
+            <input type="text" class="input-style" style="flex:2" placeholder="Search..." onkeyup="filterTerms(this.value)">
+            <select class="input-style" style="flex:1" id="dictFilter" onchange="filterDictChapter()">
+                <option value="all">All Chapters</option>
+                <option value="1">Ch 1: Environment</option>
+                <option value="2">Ch 2: Sources</option>
+                <option value="3">Ch 3: Project Mgmt</option>
+                <option value="4">Ch 4: Planning</option>
+                <option value="5">Ch 5: Requirements</option>
+                <option value="6">Ch 6: Process Modeling</option>
+                <option value="7">Ch 7: Data Modeling</option>
+                <option value="A">App A: OOAD</option>
+                <option value="B">App B: Agile</option>
+            </select>
+        </div>
+        <div class="grid" id="termsGrid">
+            </div>
+    </div>
+
+    <div id="view-flash" class="section">
+        <div style="margin-bottom:1.5rem; display:flex; justify-content:center">
+            <select class="input-style" style="max-width:100%" id="flashFilter" onchange="filterFlashChapter()">
+                <option value="all">Mix All Chapters</option>
+                <option value="1">Ch 1: Environment</option>
+                <option value="2">Ch 2: Sources</option>
+                <option value="3">Ch 3: Project Mgmt</option>
+                <option value="4">Ch 4: Planning</option>
+                <option value="5">Ch 5: Requirements</option>
+                <option value="6">Ch 6: Process Modeling</option>
+                <option value="7">Ch 7: Data Modeling</option>
+                <option value="A">App A: OOAD</option>
+                <option value="B">App B: Agile</option>
+            </select>
+        </div>
+
+        <div class="fc-container">
+            <div class="scene" onclick="flipCard()">
+                <div class="flashcard" id="flashcard">
+                    <div class="card-face front">
+                        <div class="fc-header" id="fc-ch">Chapter 1</div>
+                        <div class="fc-content">
+                            <div class="fc-text" id="fc-def">Definition</div>
+                            <div class="fc-ar" id="fc-defAr">التعريف</div>
+                        </div>
+                        <div class="fc-footer">(Tap to Reveal)</div>
+                    </div>
+                    <div class="card-face back">
+                        <div class="fc-term-back" id="fc-term">TERM</div>
+                        <div class="fc-ar-back" id="fc-termAr">المصطلح</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fc-controls">
+                <button class="btn btn-outline" onclick="moveCard(-1)">Prev</button>
+                <button class="btn btn-primary" onclick="moveCard(0)">Rand</button>
+                <button class="btn btn-outline" onclick="moveCard(1)">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-game" class="section">
+        <div class="game-wrapper" id="game-container">
+            
+            <div id="screen-setup" class="setup-screen">
+                <div class="game-title">Survival Quiz</div>
+                
+                <div style="margin-bottom:2rem; text-align:left; width:100%">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem">
+                        <label style="color:var(--text-muted); text-transform:uppercase; font-size:0.8rem; font-weight:bold">Select Chapters</label>
+                        <div>
+                             <button class="btn-outline" style="padding:0.3rem 0.8rem; font-size:0.75rem; border-radius:8px" onclick="selectAllCh()">All</button>
+                             <button class="btn-outline" style="padding:0.3rem 0.8rem; font-size:0.75rem; border-radius:8px" onclick="deselectAllCh()">Clear</button>
+                        </div>
+                    </div>
+                    
+                    <div class="ch-grid" id="ch-toggles">
+                        <div class="ch-toggle" onclick="toggleGameCh('1', this)">Ch 1</div>
+                        <div class="ch-toggle" onclick="toggleGameCh('2', this)">Ch 2</div>
+                        <div class="ch-toggle" onclick="toggleGameCh('3', this)">Ch 3</div>
+                        <div class="ch-toggle" onclick="toggleGameCh('4', this)">Ch 4</div>
+                        <div class="ch-toggle" onclick="toggleGameCh('5', this)">Ch 5</div>
+                        <div class="ch-toggle" onclick="toggleGameCh('6', this)">Ch 6</div>
+                        <div class="ch-toggle" onclick="toggleGameCh('7', this)">Ch 7</div>
+                        <div class="ch-toggle" onclick="toggleGameCh('A', this)">App A</div>
+                        <div class="ch-toggle" onclick="toggleGameCh('B', this)">App B</div>
+                    </div>
+
+                    <div class="toggle-container">
+                        <span class="toggle-label"> Unique Questions Only (No Repeat)</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="noRepeatMode">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <label style="color:var(--text-muted); text-transform:uppercase; font-size:0.8rem; font-weight:bold">Difficulty</label>
+                <div class="lives-select">
+                    <div class="life-opt" onclick="setLives(3, this)">Hard (3)</div>
+                    <div class="life-opt selected" onclick="setLives(5, this)">Normal (5)</div>
+                    <div class="life-opt" onclick="setLives(10, this)">Easy (10)</div>
+                </div>
+                
+                <button class="btn btn-primary" style="width:100%; font-size:1.2rem" onclick="startGame()">START</button>
+            </div>
+            
+            <div id="screen-play" style="display:none; height:100%; flex-direction:column">
+                <div class="hud">
+                    <button class="btn-danger" onclick="quitGame()">Exit</button>
+                    <div style="flex:1; text-align:center">
+                        <div class="score" id="game-score">0</div>
+                        <div class="progress-container" id="progress-container">
+                            <div class="progress-bar" id="progress-bar"></div>
+                        </div>
+                    </div>
+                    <div class="lives" id="game-lives">❤️❤️❤️❤️❤️</div>
+                </div>
+                <div class="q-area">
+                    <div class="q-text" id="game-q">Question text...</div>
+                    <div class="q-ar" id="game-qar">...</div>
+                </div>
+                <div class="opt-grid" id="game-opts">
+                    </div>
+            </div>
+
+            <div id="screen-over" class="game-over">
+                <h1 style="color:var(--error); font-size:2.5rem; font-weight:900" id="go-title">GAME OVER</h1>
+                <div style="color:var(--text-muted)">FINAL SCORE</div>
+                <div class="final-score" id="final-score">0</div>
+                <div style="margin-bottom:2rem; font-size:1.2rem; color:#e2e8f0" id="go-msg">Good effort!</div>
+                <button class="btn btn-primary" onclick="resetGame()">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    /* ==========================================================
+       🚨 PASTE YOUR DATA ARRAY HERE 🚨
+       ========================================================== */
+    
+    const rawData = [
+        // === CHAPTER 1: The Systems Development Environment ===
+        { ch: "1", term: "Systems planning and selection", termAr: "تخطيط واختيار الأنظمة", def: "The first phase of the SDLC in which an organization’s total information system needs are analyzed and arranged.", defAr: "المرحلة الأولى من دورة حياة النظام حيث يتم تحليل وترتيب احتياجات المنظمة الكاملة.", key: "First phase" },
+        { ch: "1", term: "Information systems analysis and design", termAr: "تحليل وتصميم نظم المعلومات", def: "The process of developing and maintaining an information system.", defAr: "عملية تطوير وصيانة نظام المعلومات.", key: "Developing and maintaining" },
+        { ch: "1", term: "Participatory design (PD)", termAr: "التصميم التشاركي", def: "A systems development approach that originated in northern Europe, in which users and the improvement of their work lives are the central focus.", defAr: "نهج تطوير نشأ في شمال أوروبا يركز على المستخدمين وتحسين بيئة عملهم.", key: "northern Europe" },
+        { ch: "1", term: "Application software", termAr: "البرمجيات التطبيقية", def: "Software designed to process data and support users in an organization. Examples include spreadsheets, word processors.", defAr: "برمجيات مصممة لمعالجة البيانات ودعم المستخدمين (مثل الجداول الإلكترونية).", key: "support users" },
+        { ch: "1", term: "Systems analyst", termAr: "محلل النظم", def: "The organizational role most responsible for the analysis and design of information systems.", defAr: "الدور التنظيمي المسؤول عن تحليل وتصميم النظم.", key: "Organizational role" },
+        { ch: "1", term: "Joint application design (JAD)", termAr: "التصميم المشترك للتطبيقات", def: "A structured process in which users, managers, and analysts work together for several days in a series of intensive meetings.", defAr: "عملية منظمة يعمل فيها المستخدمون والمحللون معاً في اجتماعات مكثفة.", key: "Intensive meetings" },
+        { ch: "1", term: "Prototyping", termAr: "النمذجة الأولية", def: "Building a scaled-down version of the desired information system.", defAr: "بناء نسخة مصغرة من النظام المطلوب.", key: "Scaled-down" },
+        { ch: "1", term: "System", termAr: "النظام", def: "A group of interrelated procedures used for a business function, with an identifiable boundary, working together for some purpose.", defAr: "مجموعة من الإجراءات المترابطة تعمل معاً لغرض معين ولها حدود واضحة.", key: "Interrelated procedures" },
+        { ch: "1", term: "Component", termAr: "المكون", def: "An irreducible part or aggregation of parts that make up a system, also called a subsystem.", defAr: "جزء لا يمكن تجزئته يشكل جزءاً من النظام.", key: "Irreducible part" },
+        { ch: "1", term: "Interrelated", termAr: "مترابط", def: "Dependence of one part of the system on one or more other system parts.", defAr: "اعتماد جزء من النظام على أجزاء أخرى.", key: "Dependence" },
+        { ch: "1", term: "Boundary", termAr: "الحدود", def: "The line that marks the inside and outside of a system and that sets off the system from its environment.", defAr: "الخط الذي يفصل داخل النظام عن خارجه وعن بيئته.", key: "Marks the inside" },
+        { ch: "1", term: "Purpose", termAr: "الغرض", def: "The overall goal or function of a system.", defAr: "الهدف العام أو وظيفة النظام.", key: "Overall goal" },
+        { ch: "1", term: "Systems design", termAr: "تصميم النظم", def: "Phase of the SDLC, in which the system chosen for development is first described independently of any computer platform.", defAr: "مرحلة يتم فيها وصف النظام بشكل مستقل عن منصة الحاسوب قبل تحويله لتفاصيل تقنية.", key: "Independently" },
+        { ch: "1", term: "Systems analysis", termAr: "تحليل النظم", def: "Phase of the SDLC, in which the current system is studied and alternative replacement systems are proposed.", defAr: "مرحلة يتم فيها دراسة النظام الحالي واقتراح بدائل.", key: "Current system" },
+        { ch: "1", term: "Environment", termAr: "البيئة", def: "Everything external to a system that interacts with the system.", defAr: "كل شيء خارج النظام ويتفاعل معه.", key: "Everything external" },
+        { ch: "1", term: "Interface", termAr: "الواجهة", def: "Point of contact where a system meets its environment or where subsystems meet each other.", defAr: "نقطة الاتصال حيث يلتقي النظام ببيئته أو تلتقي الأنظمة الفرعية ببعضها.", key: "Point of contact" },
+        { ch: "1", term: "Constraint", termAr: "القيد", def: "A limit to what a system can accomplish.", defAr: "حد لما يمكن للنظام تحقيقه.", key: "Limit" },
+        { ch: "1", term: "Systems implementation", termAr: "تطبيق النظام", def: "Final phase of the SDLC, in which the information system is coded, tested, and installed.", defAr: "المرحلة النهائية حيث يتم برمجة النظام واختباره وتثبيته.", key: "Final phase" },
+        { ch: "1", term: "Systems development methodology", termAr: "منهجية تطوير النظم", def: "A standard process followed in an organization to conduct all the steps necessary to analyze, design, implement, and maintain information systems.", defAr: "عملية قياسية تتبع لإجراء جميع خطوات تطوير النظام.", key: "Standard process" },
+        { ch: "1", term: "SDLC", termAr: "دورة حياة تطوير النظام", def: "The series of steps used to mark the phases of development for an information system.", defAr: "سلسلة الخطوات المستخدمة لتحديد مراحل التطوير.", key: "Series of steps" },
+        { ch: "1", term: "Decomposition", termAr: "التحلل (التفكيك)", def: "The process of breaking the description of a system down into small components.", defAr: "عملية تقسيم وصف النظام إلى مكونات صغيرة.", key: "Breaking" },
+        { ch: "1", term: "Modularity", termAr: "التقسيم لوحدات", def: "Dividing a system up into chunks or modules of a relatively uniform size.", defAr: "تقسيم النظام إلى كتل أو وحدات ذات حجم موحد نسبياً.", key: "Chunks" },
+        { ch: "1", term: "Coupling", termAr: "الاقتران (الاعتمادية)", def: "The extent to which subsystems depend on each other.", defAr: "مدى اعتماد الأنظمة الفرعية على بعضها البعض.", key: "Depend on each other" },
+        { ch: "1", term: "Cohesion", termAr: "التماسك", def: "The extent to which a system or subsystem performs a single function.", defAr: "المدى الذي يؤدي فيه النظام وظيفة واحدة محددة.", key: "Single function" },
+        { ch: "1", term: "CASE", termAr: "هندسة البرمجيات بمساعدة الحاسوب", def: "Software tools that provide automated support for some portion of the systems development process.", defAr: "أدوات برمجية توفر دعماً آلياً لعملية التطوير.", key: "Automated support" },
+        { ch: "1", term: "Repository", termAr: "المستودع", def: "A centralized database that contains all diagrams, forms and report definitions, and data structures.", defAr: "قاعدة بيانات مركزية تحتوي على جميع المخططات والتعريفات.", key: "Centralized database" },
+        { ch: "1", term: "RAD", termAr: "تطوير التطبيقات السريع", def: "Systems development methodology created to radically decrease the time needed to design and implement information systems.", defAr: "منهجية تهدف لتقليل الوقت اللازم للتصميم والتنفيذ بشكل جذري.", key: "Radically decrease" },
+        { ch: "1", term: "Agile Methodologies", termAr: "المنهجيات الرشيقة", def: "Current approaches to systems development that focus on adaptive methodologies, people instead of roles, and self-adaptive process.", defAr: "مناهج حديثة تركز على التكيف والأشخاص بدلاً من الأدوار الجامدة.", key: "Adaptive" },
+
+        // === CHAPTER 2: The Sources of Software ===
+        { ch: "2", term: "Outsourcing", termAr: "التعهيد (مصادر خارجية)", def: "The practice of turning over responsibility of some or all of an organization’s information systems applications to an outside firm.", defAr: "ممارسة تحويل مسؤولية نظم المعلومات إلى شركة خارجية.", key: "Turning over" },
+        { ch: "2", term: "ERP system", termAr: "نظام تخطيط موارد المؤسسة", def: "A system that integrates individual traditional business functions into a series of modules so that a single transaction occurs seamlessly.", defAr: "نظام يدمج وظائف العمل في وحدات متسلسلة لضمان سلاسة المعاملات.", key: "Single transaction" },
+        { ch: "2", term: "RFP", termAr: "طلب تقديم العروض", def: "A document provided to vendors to ask them to propose hardware and system software that will meet the requirements.", defAr: "وثيقة تقدم للبائعين ليقترحوا الأجهزة والبرامج المناسبة.", key: "Document provided" },
+        { ch: "2", term: "Reuse", termAr: "إعادة الاستخدام", def: "The use of previously written software resources, especially objects and components, in new applications.", defAr: "استخدام موارد برمجية مكتوبة مسبقاً في تطبيقات جديدة.", key: "Previously written" },
+        { ch: "2", term: "Cloud computing", termAr: "الحوسبة السحابية", def: "The provision of computing resources over the Internet, so customers do not have to invest in the computing infrastructure.", defAr: "توفير الموارد الحاسوبية عبر الإنترنت دون الحاجة للاستثمار في البنية التحتية.", key: "Over the Internet" },
+
+        // === CHAPTER 3: Managing the Project ===
+        { ch: "3", term: "Project workbook", termAr: "كتاب عمل المشروع", def: "An online or hard-copy repository for all project correspondence, inputs, outputs, deliverables, and procedures.", defAr: "مستودع لجميع وثائق ومراسلات المشروع.", key: "Online or hard-copy" },
+        { ch: "3", term: "Deliverable", termAr: "المخرجات (التسليمات)", def: "An end product in a phase of the SDLC.", defAr: "منتج نهائي في مرحلة من مراحل التطوير.", key: "End product" },
+        { ch: "3", term: "Feasibility study", termAr: "دراسة الجدوى", def: "Determines whether the information system makes sense for the organization from an economic and operational standpoint.", defAr: "تحدد ما إذا كان النظام منطقياً اقتصادياً وتشغيلياً للمنظمة.", key: "Makes sense" },
+        { ch: "3", term: "Project management", termAr: "إدارة المشاريع", def: "A controlled process of initiating, planning, executing, and closing down a project.", defAr: "عملية منضبطة للبدء والتخطيط والتنفيذ وإغلاق المشروع.", key: "Controlled process" },
+        { ch: "3", term: "Project execution", termAr: "تنفيذ المشروع", def: "The phase in which the plans created in the prior phases are put into action.", defAr: "المرحلة التي يتم فيها وضع الخطط موضع التنفيذ.", key: "Put into action" },
+        { ch: "3", term: "Project initiation", termAr: "بدء المشروع", def: "The first phase of the project management process in which activities are performed to assess the size, scope, and complexity.", defAr: "المرحلة الأولى التي يتم فيها تقييم حجم ونطاق وتعقيد المشروع.", key: "Assess size" },
+        { ch: "3", term: "Network diagram", termAr: "مخطط الشبكة", def: "A diagram that depicts project tasks and their interrelationships.", defAr: "مخطط يوضح مهام المشروع والعلاقات بينها.", key: "Depicts tasks" },
+        { ch: "3", term: "Project", termAr: "المشروع", def: "A planned undertaking of related activities to reach an objective that has a beginning and an end.", defAr: "نشاط مخطط له بداية ونهاية لتحقيق هدف معين.", key: "Planned undertaking" },
+        { ch: "3", term: "Slack time", termAr: "وقت الركود (المهلة)", def: "The amount of time that an activity can be delayed without delaying the project.", defAr: "مقدار الوقت الذي يمكن أن يتأخره النشاط دون تأخير المشروع.", key: "Delayed without delaying" },
+        { ch: "3", term: "WBS", termAr: "هيكل تقسيم العمل", def: "The process of dividing the project into manageable tasks and logically ordering them.", defAr: "عملية تقسيم المشروع إلى مهام قابلة للإدارة وترتيبها.", key: "Dividing" },
+        { ch: "3", term: "Project closedown", termAr: "إغلاق المشروع", def: "The final phase of the project management process, which focuses on bringing a project to an end.", defAr: "المرحلة النهائية التي تركز على إنهاء المشروع.", key: "Bringing to an end" },
+        { ch: "3", term: "Gantt chart", termAr: "مخطط غانت", def: "A graphical representation of a project that shows each task activity as a horizontal bar.", defAr: "تمثيل رسومي يظهر المهام كأشرطة أفقية.", key: "Horizontal bar" },
+        { ch: "3", term: "Resources", termAr: "الموارد", def: "Any person, group of people, piece of equipment, or material used in accomplishing an activity.", defAr: "أي شخص أو معدات أو مواد تستخدم لإنجاز النشاط.", key: "Person, group" },
+        { ch: "3", term: "Critical path scheduling", termAr: "جدولة المسار الحرج", def: "A scheduling technique in which the order and duration of a sequence of activities directly affect the completion date.", defAr: "تقنية جدولة حيث يؤثر ترتيب الأنشطة ومدتها على تاريخ الإنجاز.", key: "Order and duration" },
+        { ch: "3", term: "Project manager", termAr: "مدير المشروع", def: "A systems analyst with a diverse set of skills responsible for initiating, planning, executing, and closing down a project.", defAr: "محلل نظم بمهارات متنوعة مسؤول عن دورة حياة المشروع.", key: "Skills" },
+        { ch: "3", term: "Project planning", termAr: "تخطيط المشروع", def: "The second phase of project management, focusing on defining clear, discrete activities.", defAr: "المرحلة الثانية التي تركز على تحديد أنشطة واضحة ومنفصلة.", key: "Defining clear" },
+        { ch: "3", term: "Critical path", termAr: "المسار الحرج", def: "The shortest time in which a project can be completed.", defAr: "أقصر وقت يمكن فيه إكمال المشروع.", key: "Shortest time" },
+        { ch: "3", term: "PERT", termAr: "بيرت (تقنية مراجعة البرامج)", def: "A technique that uses optimistic, pessimistic, and realistic time estimates.", defAr: "تقنية تستخدم تقديرات وقت متفائلة ومتشائمة وواقعية.", key: "Optimistic, pessimistic" },
+        { ch: "3", term: "Project charter", termAr: "ميثاق المشروع", def: "A short document prepared for the customer describing deliverables and work at a high level.", defAr: "وثيقة قصيرة تصف التسليمات والعمل بمستوى عالٍ.", key: "Short document" },
+        { ch: "3", term: "COCOMO", termAr: "نموذج التكلفة البنّاء", def: "A method for estimating a software project's size and cost.", defAr: "طريقة لتقدير حجم وتكلفة مشروع البرمجيات.", key: "Estimating" },
+
+        // === CHAPTER 4: Systems Planning and Selection ===
+        { ch: "4", term: "Political feasibility", termAr: "الجدوى السياسية", def: "The process of evaluating how key stakeholders within the organization view the proposed system.", defAr: "تقييم وجهة نظر أصحاب المصلحة الرئيسيين تجاه النظام المقترح.", key: "Stakeholders view" },
+        { ch: "4", term: "Project scope statement", termAr: "بيان نطاق المشروع", def: "A document prepared for the customer that describes what the project will deliver and outlines work at a high level.", defAr: "وثيقة تصف ما سيقدمه المشروع وتحدد العمل بشكل عام.", key: "High level" },
+        { ch: "4", term: "Business case", termAr: "دراسة حالة العمل", def: "A written report that outlines the justification for an information system, highlighting economic benefits and costs.", defAr: "تقرير يوضح مبررات النظام ويسلط الضوء على الفوائد الاقتصادية والتكاليف.", key: "Justification" },
+        { ch: "4", term: "Economic feasibility", termAr: "الجدوى الاقتصادية", def: "A process of identifying the financial benefits and costs associated with a development project.", defAr: "تحديد الفوائد المالية والتكاليف المرتبطة بالمشروع.", key: "Financial benefits" },
+        { ch: "4", term: "Incremental commitment", termAr: "الالتزام التزايدي", def: "A strategy where the project is reviewed after each phase, and continuation is rejustified.", defAr: "استراتيجية تتم فيها مراجعة المشروع بعد كل مرحلة لتبرير استمراره.", key: "Reviewed after each phase" },
+        { ch: "4", term: "Recurring cost", termAr: "التكلفة المتكررة", def: "A cost resulting from the ongoing evolution and use of a system.", defAr: "تكلفة ناتجة عن الاستخدام المستمر للنظام.", key: "Cost repeated" },
+        { ch: "4", term: "Discount rate", termAr: "سعر الخصم", def: "The interest rate used to compute the present value of future cash flows.", defAr: "سعر الفائدة المستخدم لحساب القيمة الحالية للتدفقات النقدية المستقبلية.", key: "Interest rate" },
+        { ch: "4", term: "Intangible benefit", termAr: "فائدة غير ملموسة", def: "A benefit derived from an information system that cannot be easily measured in dollars or with certainty.", defAr: "فائدة لا يمكن قياسها بسهولة بالمال أو بدقة.", key: "Cannot be easily measured" },
+        { ch: "4", term: "Internet", termAr: "الإنترنت", def: "A global computing network to support business-to-consumer electronic commerce.", defAr: "شبكة حوسبة عالمية تدعم التجارة الإلكترونية.", key: "Interconnected" },
+        { ch: "4", term: "Schedule feasibility", termAr: "جدوى الجدول الزمني", def: "Assessing the degree to which the potential time frame meets organizational deadlines.", defAr: "تقييم ما إذا كان الإطار الزمني يلبي المواعيد النهائية للمنظمة.", key: "Time frame" },
+        { ch: "4", term: "Tangible cost", termAr: "تكلفة ملموسة", def: "A cost associated with an information system that can be easily measured in dollars and with certainty.", defAr: "تكلفة يمكن قياسها بسهولة بالمال وبدقة.", key: "Measured in dollars" },
+        { ch: "4", term: "Electronic commerce (EC)", termAr: "التجارة الإلكترونية", def: "Internet-based communication and other technologies that support day-to-day business activities.", defAr: "تقنيات قائمة على الإنترنت تدعم الأنشطة التجارية اليومية.", key: "Day-to-day" },
+        { ch: "4", term: "Walkthrough", termAr: "المراجعة التفصيلية (Walkthrough)", def: "A peer group review of any product created during the systems development process.", defAr: "مراجعة جماعية من الأقران لأي منتج تم إنشاؤه أثناء التطوير.", key: "Peer group review" },
+        { ch: "4", term: "Technical feasibility", termAr: "الجدوى الفنية", def: "A process of assessing the development organization’s ability to construct a proposed system.", defAr: "تقييم قدرة المنظمة على بناء النظام المقترح.", key: "Organization’s ability" },
+        { ch: "4", term: "One-time cost", termAr: "تكلفة لمرة واحدة", def: "A cost associated with project initiation and development, or system start-up.", defAr: "تكلفة مرتبطة ببدء المشروع أو تشغيل النظام.", key: "Start-up" },
+        { ch: "4", term: "Present value", termAr: "القيمة الحالية", def: "The current value of a future cash flow.", defAr: "القيمة الحالية لتدفق نقدي مستقبلي.", key: "Current value" },
+        { ch: "4", term: "Intranet", termAr: "الإنترانت", def: "Internet-based communication to support business activities within a single organization.", defAr: "شبكة داخلية تدعم أنشطة الأعمال داخل منظمة واحدة.", key: "Within a single" },
+        { ch: "4", term: "Tangible benefit", termAr: "فائدة ملموسة", def: "A benefit derived from an information system that can be measured in dollars and with certainty.", defAr: "فائدة يمكن قياسها بالمال وبدقة.", key: "Measured in dollars" },
+        { ch: "4", term: "Legal feasibility", termAr: "الجدوى القانونية", def: "The process of assessing potential legal and contractual ramifications due to the construction of a system.", defAr: "تقييم التداعيات القانونية والتعاقدية المحتملة لبناء النظام.", key: "Ramifications" },
+        { ch: "4", term: "Intangible cost", termAr: "تكلفة غير ملموسة", def: "A cost associated with an information system that cannot be easily measured in terms of dollars.", defAr: "تكلفة لا يمكن قياسها بسهولة بالمال.", key: "Cannot be measured" },
+        { ch: "4", term: "Baseline project plan (BPP)", termAr: "خطة المشروع الأساسية", def: "Contains the best estimate of the project’s scope, benefits, costs, risks, and resource requirements.", defAr: "تحتوي على أفضل تقدير لنطاق المشروع وفوائده وتكاليفه.", key: "Best estimate" },
+        { ch: "4", term: "Operational feasibility", termAr: "الجدوى التشغيلية", def: "The process of assessing the degree to which a proposed system solves business problems.", defAr: "تقييم درجة حل النظام المقترح لمشاكل العمل.", key: "Solves business problems" },
+        { ch: "4", term: "Time value of money (TVM)", termAr: "القيمة الزمنية للنقود", def: "The process of comparing present cash outlays to future expected returns.", defAr: "مقارنة المصروفات النقدية الحالية بالعوائد المستقبلية المتوقعة.", key: "Comparing present" },
+        { ch: "4", term: "Break-even analysis", termAr: "تحليل نقطة التعادل", def: "A type of cost-benefit analysis to identify at what point benefits equal costs.", defAr: "تحليل لتحديد النقطة التي تتساوى فيها الفوائد مع التكاليف.", key: "Benefits equal costs" },
+        { ch: "4", term: "Extranet", termAr: "الإكسترانت", def: "Internet-based communication to support business-to-business activities.", defAr: "شبكة تدعم الأنشطة بين الشركات.", key: "Business-to-business" },
+        { ch: "4", term: "EDI", termAr: "التبادل الإلكتروني للبيانات", def: "The use of telecommunications technologies to transfer business documents directly between organizations.", defAr: "نقل مستندات الأعمال مباشرة بين المنظمات إلكترونياً.", key: "Transfer business documents" },
+
+        // === CHAPTER 5: Determining System Requirements ===
+        { ch: "5", term: "BPR", termAr: "إعادة هندسة العمليات", def: "The search for radical change in business processes to achieve breakthrough improvements.", defAr: "البحث عن تغيير جذري في عمليات الأعمال لتحقيق تحسينات هائلة.", key: "Radical change" },
+        { ch: "5", term: "Scribe", termAr: "الكاتب (الموثق)", def: "The person who makes detailed notes of the happenings at a joint application design session.", defAr: "الشخص الذي يدون ملاحظات تفصيلية في جلسات التصميم المشترك.", key: "Makes detailed notes" },
+        { ch: "5", term: "Disruptive technologies", termAr: "التقنيات المزعزعة", def: "Technologies that enable the breaking of long-held business rules.", defAr: "تقنيات تتيح كسر قواعد العمل القديمة.", key: "Breaking" },
+        { ch: "5", term: "Informal system", termAr: "النظام غير الرسمي", def: "The way a system actually works.", defAr: "الطريقة التي يعمل بها النظام فعلياً.", key: "Actually works" },
+        { ch: "5", term: "Formal system", termAr: "النظام الرسمي", def: "The official way a system works as described in organizational documentation.", defAr: "الطريقة الرسمية لعمل النظام كما هو موثق.", key: "Official way" },
+        { ch: "5", term: "Key business processes", termAr: "عمليات الأعمال الرئيسية", def: "The structured, measured set of activities designed to produce a specific output for a particular customer.", defAr: "مجموعة الأنشطة المصممة لإنتاج مخرجات محددة لعميل معين.", key: "Specific output" },
+        { ch: "5", term: "Closed-ended questions", termAr: "أسئلة مغلقة", def: "Questions that ask those responding to choose from among a set of specified responses.", defAr: "أسئلة تطلب الاختيار من بين مجموعة إجابات محددة.", key: "Choose from" },
+        { ch: "5", term: "Open-ended questions", termAr: "أسئلة مفتوحة", def: "Questions in interviews and on questionnaires that have no prespecified answers.", defAr: "أسئلة ليس لها إجابات محددة مسبقاً.", key: "No prespecified" },
+        { ch: "5", term: "JAD session leader", termAr: "قائد جلسة JAD", def: "The trained individual who plans and leads joint application design sessions.", defAr: "الشخص المدرب الذي يخطط ويقود جلسات التصميم المشترك.", key: "Plans and leads" },
+
+        // === CHAPTER 6: Process Modeling ===
+        { ch: "6", term: "Data-flow diagram (DFD)", termAr: "مخطط تدفق البيانات", def: "A graphic that illustrates the movement of data between external entities and the processes and data stores.", defAr: "رسم يوضح حركة البيانات بين الكيانات والعمليات ومخازن البيانات.", key: "Movement of data" },
+        { ch: "6", term: "Balancing", termAr: "الموازنة", def: "The conservation of inputs and outputs to a data-flow diagram process when that process is decomposed.", defAr: "الحفاظ على المدخلات والمخرجات عند تفكيك العملية لمستوى أدنى.", key: "Conservation" },
+        { ch: "6", term: "Condition stubs", termAr: "بذور الشروط", def: "That part of a decision table that lists the conditions relevant to the decision.", defAr: "الجزء في جدول القرار الذي يسرد الشروط ذات الصلة.", key: "Conditions relevant" },
+        { ch: "6", term: "Level-0 diagram", termAr: "مخطط المستوى 0", def: "A data-flow diagram that represents a system’s major processes, data flows, and data stores at a high level.", defAr: "مخطط DFD يمثل العمليات الرئيسية للنظام بمستوى عالٍ.", key: "Major processes" },
+        { ch: "6", term: "Source/sink", termAr: "المصدر / المصب", def: "The origin and/or destination of data; sometimes referred to as external entities.", defAr: "أصل أو وجهة البيانات (كيانات خارجية).", key: "Origin and/or destination" },
+        { ch: "6", term: "Indifferent condition", termAr: "شرط غير مؤثر", def: "In a decision table, a condition whose value does not affect which actions are taken.", defAr: "شرط في جدول القرار لا تؤثر قيمته على الإجراءات المتخذة.", key: "Value does not affect" },
+        { ch: "6", term: "Context diagram", termAr: "مخطط السياق", def: "A data-flow diagram of the scope of an organizational system that shows the system boundaries and external entities.", defAr: "مخطط يوضح نطاق النظام وحدوده والكيانات الخارجية.", key: "Scope" },
+        { ch: "6", term: "Primitive DFD", termAr: "مخطط بدائي", def: "The lowest level of decomposition for a data-flow diagram.", defAr: "أدنى مستوى من التفكيك لمخطط تدفق البيانات.", key: "Lowest level" },
+        { ch: "6", term: "DFD completeness", termAr: "اكتمال DFD", def: "The extent to which all necessary components of a data-flow diagram have been included and fully described.", defAr: "مدى شمول المخطط لجميع المكونات الضرورية ووصفها.", key: "Fully described" },
+        { ch: "6", term: "Decision table", termAr: "جدول القرار", def: "A matrix representation of the logic of a decision, which specifies possible conditions and resulting actions.", defAr: "تمثيل مصفوفي لمنطق القرار يحدد الشروط والإجراءات الناتجة.", key: "Matrix representation" },
+        { ch: "6", term: "DFD consistency", termAr: "اتساق DFD", def: "The extent to which information contained on one level of a set of nested DFDs is also included on other levels.", defAr: "مدى تطابق المعلومات بين المستويات المختلفة للمخططات.", key: "Included on other levels" },
+        { ch: "6", term: "Level-n diagram", termAr: "مخطط المستوى n", def: "A DFD that is the result of n nested decompositions of a series of subprocesses.", defAr: "مخطط ناتج عن n عمليات تفكيك متداخلة.", key: "Result of n nested" },
+        { ch: "6", term: "Process", termAr: "العملية", def: "The work or actions performed on data so that they are transformed, stored, or distributed.", defAr: "العمل أو الإجراءات التي تتم على البيانات لتحويلها أو تخزينها.", key: "Work or actions" },
+        { ch: "6", term: "Action stubs", termAr: "بذور الإجراءات", def: "That part of a decision table that specifies which actions are to be followed for a given set of conditions.", defAr: "الجزء في جدول القرار الذي يحدد الإجراءات الواجب اتباعها.", key: "Actions to be followed" },
+        { ch: "6", term: "Data store", termAr: "مخزن البيانات", def: "Data at rest, which may take the form of many different physical representations.", defAr: "البيانات في حالة سكون (تخزين).", key: "Data at rest" },
+        { ch: "6", term: "Process modeling", termAr: "نمذجة العمليات", def: "Graphically representing the processes that capture, manipulate, store, and distribute data.", defAr: "التمثيل الرسومي للعمليات التي تتعامل مع البيانات.", key: "Graphically representing" },
+        { ch: "6", term: "Gap analysis", termAr: "تحليل الفجوة", def: "The process of discovering discrepancies between two or more sets of data-flow diagrams.", defAr: "اكتشاف التناقضات بين مجموعتين أو أكثر من المخططات.", key: "Discovering discrepancies" },
+        { ch: "6", term: "Rules", termAr: "القواعد", def: "That part of a decision table that lists the actions that result for a given set of conditions.", defAr: "الجزء الذي يسرد الإجراءات الناتجة عن شروط معينة.", key: "Actions that result" },
+
+        // === CHAPTER 7: Conceptual Data Modeling ===
+        { ch: "7", term: "E-R diagram", termAr: "مخطط الكيان والعلاقة", def: "A graphical representation of the entities, associations, and data for an organization.", defAr: "تمثيل رسومي للكيانات والعلاقات والبيانات.", key: "Entities, associations" },
+        { ch: "7", term: "Entity instance", termAr: "مثيل الكيان", def: "A single occurrence of an entity type.", defAr: "حدوث مفرد لنوع الكيان (مثال واحد).", key: "Single occurrence" },
+        { ch: "7", term: "Multivalued attribute", termAr: "سمة متعددة القيم", def: "An attribute that may take on more than one value for any given entity instance.", defAr: "سمة يمكن أن تأخذ أكثر من قيمة لمثيل واحد.", key: "More than one value" },
+        { ch: "7", term: "Ternary relationship", termAr: "علاقة ثلاثية", def: "A simultaneous relationship among instances of three entity types.", defAr: "علاقة متزامنة بين مثيلات لثلاثة أنواع من الكيانات.", key: "Three entity types" },
+        { ch: "7", term: "Entity type", termAr: "نوع الكيان", def: "A collection of entities that share common properties or characteristics.", defAr: "مجموعة من الكيانات تشترك في خصائص مشتركة.", key: "Collection of entities" },
+        { ch: "7", term: "Binary relationship", termAr: "علاقة ثنائية", def: "A relationship between instances of two entity types.", defAr: "علاقة بين مثيلات لنوعين من الكيانات.", key: "Two entity types" },
+        { ch: "7", term: "Associative entity", termAr: "الكيان الرابط", def: "An entity type that associates the instances of one or more entity types and contains attributes peculiar to the relationship.", defAr: "كيان يربط بين الكيانات ويحتوي على خصائص خاصة بالعلاقة.", key: "Peculiar to the relationship" },
+        { ch: "7", term: "Attribute", termAr: "السمة (الصفة)", def: "A named property or characteristic of an entity that is of interest to the organization.", defAr: "خاصية مسماة للكيان تهم المنظمة.", key: "Named property" },
+        { ch: "7", term: "Cardinality", termAr: "التعددية (Cardinality)", def: "The number of instances of entity B that can (or must) be associated with each instance of entity A.", defAr: "عدد مثيلات الكيان B التي يمكن أن ترتبط بمثيل من الكيان A.", key: "Number of instances" },
+        { ch: "7", term: "Identifier", termAr: "المعرف", def: "A candidate key that has been selected as the unique, identifying characteristic for an entity type.", defAr: "مفتاح مرشح تم اختياره ليكون المعرف الفريد.", key: "Candidate key selected" },
+        { ch: "7", term: "Relationship", termAr: "العلاقة", def: "An association between the instances of one or more entity types that is of interest to the organization.", defAr: "ارتباط بين مثيلات الكيانات يهم المنظمة.", key: "Association between" },
+        { ch: "7", term: "Candidate key", termAr: "المفتاح المرشح", def: "An attribute (or combination) that uniquely identifies each instance of an entity type.", defAr: "سمة تحدد بشكل فريد كل مثيل للكيان.", key: "Uniquely identifies" },
+        { ch: "7", term: "Degree", termAr: "الدرجة", def: "The number of entity types that participate in a relationship.", defAr: "عدد أنواع الكيانات المشاركة في العلاقة.", key: "Number of entity types" },
+        { ch: "7", term: "Unary relationship", termAr: "علاقة أحادية", def: "A relationship between the instances of one entity type.", defAr: "علاقة بين مثيلات لنوع كيان واحد.", key: "One entity type" },
+        { ch: "7", term: "Conceptual data model", termAr: "نموذج البيانات المفاهيمي", def: "A detailed model that shows the overall structure of organizational data but is independent of any database management system.", defAr: "نموذج يظهر هيكل البيانات بشكل مستقل عن نظام قاعدة البيانات.", key: "Independent of database" },
+        { ch: "7", term: "Repeating group", termAr: "المجموعة المكررة", def: "A set of two or more multivalued attributes that are logically related.", defAr: "مجموعة من السمات متعددة القيم المرتبطة منطقياً.", key: "Set of two or more" },
+        { ch: "7", term: "Entity", termAr: "الكيان", def: "A person, place, object, event, or concept in the user environment about which the organization wishes to maintain data.", defAr: "شخص أو مكان أو شيء ترغب المنظمة في حفظ بيانات عنه.", key: "Person, place, object" },
+        { ch: "7", term: "Design strategy", termAr: "استراتيجية التصميم", def: "A particular approach to developing an information system. It includes statements on the system’s functionality, hardware and software.", defAr: "نهج لتطوير النظام يشمل الوظائف والأجهزة والبرامج.", key: "Hardware and software" },
+
+        // === APPENDICES: OOAD & Agile ===
+        { ch: "A", term: "Use-case diagram", termAr: "مخطط حالة الاستخدام", def: "A diagram that depicts the use cases and actors for a system.", defAr: "مخطط يوضح حالات الاستخدام والفاعلين في النظام.", key: "Use cases and actors" },
+        { ch: "A", term: "Event", termAr: "الحدث", def: "Something that takes place at a certain point in time; it is a noteworthy occurrence that triggers a state transition.", defAr: "شيء يحدث في وقت معين ويؤدي لانتقال الحالة.", key: "Point in time" },
+        { ch: "A", term: "Activation", termAr: "التنشيط", def: "The time period during which an object performs an operation.", defAr: "الفترة الزمنية التي يقوم فيها الكائن بعملية ما.", key: "Time period" },
+        { ch: "A", term: "Object class", termAr: "فئة الكائن (Class)", def: "A set of objects that share a common structure and a common behavior.", defAr: "مجموعة من الكائنات تشترك في بنية وسلوك مشترك.", key: "Common structure" },
+        { ch: "A", term: "UML", termAr: "لغة النمذجة الموحدة", def: "A notation that allows the modeler to specify, visualize, and construct the artifacts of software systems.", defAr: "لغة تدوين لتحديد وتصور وبناء أنظمة البرمجيات.", key: "Notation" },
+        { ch: "A", term: "Synchronous message", termAr: "رسالة متزامنة", def: "A type of message in which the caller has to wait for the receiving object to finish executing the called operation.", defAr: "رسالة يجب أن ينتظر فيها المرسل حتى ينتهي المستقبل من التنفيذ.", key: "Wait" },
+        { ch: "A", term: "Association role", termAr: "دور الارتباط", def: "The end of an association where it connects to a class.", defAr: "طرف الارتباط حيث يتصل بالفئة.", key: "Connects to a class" },
+        { ch: "A", term: "Object diagram", termAr: "مخطط الكائنات", def: "A graph of instances that are compatible with a given class diagram.", defAr: "رسم للمثيلات المتوافقة مع مخطط الفئات.", key: "Graph of instances" },
+        { ch: "A", term: "State transition", termAr: "انتقال الحالة", def: "The changes in the attributes of an object or in the links an object has with other objects.", defAr: "التغييرات في سمات الكائن أو روابطه.", key: "Changes in attributes" },
+        { ch: "A", term: "Object", termAr: "الكائن", def: "An entity that has a well-defined role in the application domain and has state, behavior, and identity.", defAr: "كيان له دور محدد وحالة وسلوك وهوية.", key: "Role, state, behavior" },
+        { ch: "A", term: "Component diagram", termAr: "مخطط المكونات", def: "A diagram that shows the software components or modules and their dependencies.", defAr: "مخطط يظهر مكونات البرمجيات واعتمادياتها.", key: "Software components" },
+        { ch: "A", term: "Actor", termAr: "الفاعل (Actor)", def: "An external entity that interacts with the system (similar to an external entity in data-flow diagramming).", defAr: "كيان خارجي يتفاعل مع النظام.", key: "External entity" },
+        { ch: "A", term: "Use case", termAr: "حالة الاستخدام", def: "A complete sequence of related actions initiated by an actor; it represents a specific way to use the system.", defAr: "سلسلة كاملة من الإجراءات يبدأها فاعل؛ تمثل طريقة لاستخدام النظام.", key: "Sequence of related actions" },
+        { ch: "A", term: "Aggregation", termAr: "التجميع (Aggregation)", def: "A part-of relationship between a component object and an aggregate object.", defAr: "علاقة 'جزء من كل' بين الكائنات.", key: "Part-of relationship" },
+        { ch: "A", term: "Multiplicity", termAr: "التعددية", def: "An indication of how many objects participate in a given relationship.", defAr: "مؤشر لعدد الكائنات المشاركة في العلاقة.", key: "How many objects" },
+        { ch: "A", term: "Encapsulation", termAr: "التغليف", def: "The technique of hiding the internal implementation details of an object from its external view.", defAr: "إخفاء تفاصيل التنفيذ الداخلية للكائن.", key: "Hiding" },
+        { ch: "A", term: "Operation", termAr: "العملية", def: "A function or a service that is provided by all the instances of a class.", defAr: "وظيفة أو خدمة تقدمها جميع مثيلات الفئة.", key: "Function or a service" },
+        { ch: "A", term: "State", termAr: "الحالة", def: "A condition that encompasses an object’s properties and the values those properties have.", defAr: "ظرف يشمل خصائص الكائن وقيمها.", key: "Condition" },
+        { ch: "A", term: "Behavior", termAr: "السلوك", def: "Represents how an object acts and reacts.", defAr: "يمثل كيف يتصرف الكائن ويستجيب.", key: "Acts and reacts" },
+        { ch: "A", term: "Class diagram", termAr: "مخطط الفئات", def: "A diagram that shows the static structure of an object-oriented model: the object classes, their internal structure, and relationships.", defAr: "مخطط يظهر الهيكل الثابت للكائنات وعلاقاتها.", key: "Static structure" },
+        { ch: "A", term: "Association", termAr: "الارتباط", def: "A relationship among object classes.", defAr: "علاقة بين فئات الكائنات.", key: "Relationship among classes" },
+        { ch: "A", term: "Abstract class", termAr: "فئة مجردة", def: "A class that has no direct instances but whose descendants may have direct instances.", defAr: "فئة ليس لها مثيلات مباشرة.", key: "No direct instances" },
+        { ch: "A", term: "Concrete class", termAr: "فئة ملموسة", def: "A class that can have direct instances.", defAr: "فئة يمكن أن يكون لها مثيلات مباشرة.", key: "Can have direct instances" },
+        { ch: "A", term: "Sequence diagram", termAr: "مخطط التسلسل", def: "A depiction of the interactions among objects during a certain period of time.", defAr: "تصوير للتفاعلات بين الكائنات خلال فترة زمنية.", key: "Interactions" },
+        { ch: "A", term: "Simple message", termAr: "رسالة بسيطة", def: "A message that transfers control from the sender to the recipient without describing the details of the communication.", defAr: "رسالة تنقل التحكم دون تفاصيل الاتصال.", key: "Transfers control" },
+        { ch: "B", term: "Refactoring", termAr: "إعادة الهيكلة (Refactoring)", def: "Making a program simpler after adding a new feature.", defAr: "جعل البرنامج أبسط بعد إضافة ميزة جديدة.", key: "Making simpler" },
+        { ch: "B", term: "Simple design", termAr: "التصميم البسيط", def: "Creating uncomplicated software components that work to solve the current problem rather than future possibilities.", defAr: "إنشاء برمجيات غير معقدة لحل المشكلة الحالية فقط.", key: "Uncomplicated" },
+        { ch: "B", term: "Agile Methodologies", termAr: "المنهجيات الرشيقة", def: "A family of development methodologies characterized by short iterative cycles and extensive testing.", defAr: "عائلة من المنهجيات تتميز بدورات قصيرة واختبار مكثف.", key: "Short iterative cycles" }
+    ];
+
+
+
+    /* ==========================================================
+       LOGIC ENGINE
+       ========================================================== */
+    
+    // --- Utils ---
+    function highlight(text, key) {
+        if(!key) return text;
+        const regex = new RegExp(`(${key})`, 'gi');
+        return text.replace(regex, `<span class="hl-word">$1</span>`);
+    }
+
+    function switchTab(id) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('view-'+id).classList.add('active');
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-'+id).classList.add('active');
+    }
+
+    // --- Dictionary ---
+    function renderList(items) {
+        const grid = document.getElementById('termsGrid');
+        if(!items || items.length === 0) { 
+            grid.innerHTML = '<div style="text-align:center; padding:2rem; color:grey">No terms found. Please add data.</div>'; 
+            return; 
+        }
+        grid.innerHTML = items.map(d => `
+            <div class="dict-card">
+                <div class="dict-left">
+                    <div class="dict-def">${highlight(d.def, d.key)}</div>
+                    <div class="dict-ar">${d.defAr}</div>
+                </div>
+                <div class="dict-right">
+                    <div class="dict-term">${d.term}</div>
+                    <div class="dict-term-ar">${d.termAr}</div>
+                    <div class="dict-ch">Chapter ${d.ch}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function filterTerms(val) {
+        const lower = val.toLowerCase();
+        const filtered = rawData.filter(d => 
+            d.term.toLowerCase().includes(lower) || 
+            d.def.toLowerCase().includes(lower) || 
+            d.termAr.includes(val) || 
+            d.key.toLowerCase().includes(lower)
+        );
+        renderList(filtered);
+    }
+
+    function filterDictChapter() {
+        const ch = document.getElementById('dictFilter').value;
+        renderList(ch === 'all' ? rawData : rawData.filter(d => d.ch === ch));
+    }
+
+    // --- Flashcards ---
+    let fcIndex = 0;
+    let fcPool = []; 
+    
+    function filterFlashChapter() {
+        const ch = document.getElementById('flashFilter').value;
+        fcPool = (ch === 'all') ? [...rawData] : rawData.filter(d => d.ch === ch);
+        fcIndex = 0; 
+        loadCard();
+    }
+
+    function loadCard() {
+        if(fcPool.length === 0 && rawData.length > 0) fcPool = [...rawData];
+        if(!fcPool.length) return;
+        
+        const d = fcPool[fcIndex];
+        document.getElementById('fc-ch').innerText = 'Chapter ' + d.ch;
+        const defEl = document.getElementById('fc-def');
+        defEl.innerHTML = highlight(d.def, d.key);
+        document.getElementById('fc-defAr').innerText = d.defAr;
+        
+        document.getElementById('fc-term').innerText = d.term;
+        document.getElementById('fc-termAr').innerText = d.termAr;
+
+        defEl.className = 'fc-text'; 
+        const len = d.def.length;
+        if(len < 60) defEl.classList.add('size-lg');
+        else if(len < 130) defEl.classList.add('size-md');
+        else if(len < 220) defEl.classList.add('size-sm');
+        else defEl.classList.add('size-xs');
+
+        document.getElementById('flashcard').classList.remove('is-flipped');
+    }
+
+    function flipCard() { document.getElementById('flashcard').classList.toggle('is-flipped'); }
+    
+    function moveCard(dir) {
+        if(!fcPool.length) return;
+        if(dir === 0) fcIndex = Math.floor(Math.random() * fcPool.length);
+        else fcIndex = (fcIndex + dir + fcPool.length) % fcPool.length;
+        loadCard();
+    }
+
+    // --- Game Engine (Pro) ---
+    let game = { active: false, score: 0, lives: 5, maxLives: 5, q: null, pool: [], selectedChapters: new Set(), isNoRepeat: false, totalQ: 0 };
+
+    function toggleGameCh(ch, btn) {
+        if(game.selectedChapters.has(ch)) {
+            game.selectedChapters.delete(ch);
+            btn.classList.remove('active');
+        } else {
+            game.selectedChapters.add(ch);
+            btn.classList.add('active');
+        }
+    }
+    
+    function selectAllCh() {
+        document.querySelectorAll('.ch-toggle').forEach(btn => {
+            const ch = btn.innerText.replace('Ch ','').replace('App ','');
+            game.selectedChapters.add(ch);
+            btn.classList.add('active');
+        });
+    }
+
+    function deselectAllCh() {
+        game.selectedChapters.clear();
+        document.querySelectorAll('.ch-toggle').forEach(btn => btn.classList.remove('active'));
+    }
+
+    function setLives(n, btn) {
+        game.maxLives = n;
+        document.querySelectorAll('.life-opt').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+    }
+
+    function startGame() {
+        if(!rawData.length) return alert("Please add data first!");
+        
+        if(game.selectedChapters.size === 0) {
+            alert("Please select at least one chapter!");
+            return;
+        }
+
+        // Setup Pool
+        game.pool = rawData.filter(d => game.selectedChapters.has(d.ch));
+        
+        if(game.pool.length < 4) return alert("Selected chapters have too few terms. Select more.");
+
+        // Check No Repeat Mode
+        game.isNoRepeat = document.getElementById('noRepeatMode').checked;
+        if(game.isNoRepeat) {
+            // Shuffle pool initially
+            game.pool.sort(() => Math.random() - 0.5);
+            game.totalQ = game.pool.length;
+            document.getElementById('progress-container').style.display = 'block';
+        } else {
+            document.getElementById('progress-container').style.display = 'none';
+        }
+
+        game.active = true;
+        game.score = 0;
+        game.lives = game.maxLives;
+        
+        document.getElementById('screen-setup').style.display = 'none';
+        document.getElementById('screen-over').style.display = 'none';
+        document.getElementById('screen-play').style.display = 'flex';
+        
+        updateGameHUD();
+        nextGameQ();
+    }
+
+    function resetGame() {
+        document.getElementById('screen-play').style.display = 'none';
+        document.getElementById('screen-over').style.display = 'none';
+        document.getElementById('screen-setup').style.display = 'flex';
+    }
+
+    function quitGame() {
+        if(confirm("Exit current game?")) {
+            resetGame();
+        }
+    }
+
+    function updateGameHUD() {
+        document.getElementById('game-score').innerText = game.score;
+        let h = ""; 
+        for(let i=0; i<game.lives; i++) h+="❤️";
+        for(let i=0; i<(game.maxLives-game.lives); i++) h+="🖤";
+        document.getElementById('game-lives').innerText = h;
+
+        // Update progress bar if No Repeat
+        if(game.isNoRepeat) {
+            const answered = game.totalQ - game.pool.length; // Approximate (since q removed after answer)
+            // Note: pool length decreases by 1 each round in NoRepeat mode
+            const percent = ((game.totalQ - game.pool.length) / game.totalQ) * 100;
+            document.getElementById('progress-bar').style.width = percent + '%';
+        }
+    }
+
+    function nextGameQ() {
+        if(!game.active) return;
+        
+        // --- GAME OVER CHECK (No Repeat Mode) ---
+        if(game.isNoRepeat && game.pool.length === 0) {
+            finishGame(true); // Victory
+            return;
+        }
+
+        // Pick Question
+        let d;
+        let idx;
+        if(game.isNoRepeat) {
+            // In NoRepeat, we take from the list (it is already shuffled)
+            // But we remove it LATER (after answering) or NOW? 
+            // Better to remove NOW to avoid picking it as a wrong option? 
+            // Actually, we need it in the pool to generate wrong answers?
+            // Strategy: Pick first item, move it to 'currentQ' and remove from pool TEMPORARILY or permanently?
+            // Correction: Remove it permanently from pool to track progress, BUT we need wrong answers.
+            // Wrong answers can come from rawData (global).
+            
+            d = game.pool.pop(); // Remove the last item (efficient)
+            game.q = d;
+        } else {
+            // Random pick
+            idx = Math.floor(Math.random() * game.pool.length);
+            d = game.pool[idx];
+            game.q = d;
+        }
+
+        updateGameHUD(); // Update progress bar
+
+        // Render
+        document.getElementById('game-q').innerHTML = highlight(d.def, d.key);
+        document.getElementById('game-qar').innerText = d.defAr;
+
+        // Options
+        let opts = [d];
+        while(opts.length < 4) {
+            const r = rawData[Math.floor(Math.random() * rawData.length)];
+            if(!opts.find(o => o.term === r.term)) opts.push(r);
+        }
+        opts.sort(() => Math.random() - 0.5);
+
+        document.getElementById('game-opts').innerHTML = opts.map(o => `
+            <div class="opt-btn" onclick="check(this, '${o.term.replace(/'/g, "\\'")}')">
+                <div style="font-weight:bold; font-size:1.1rem; color:white">${o.term}</div>
+                <div style="font-size:0.95rem; color:#94a3b8; font-family:var(--font-ar)">${o.termAr}</div>
+            </div>
+        `).join('');
+    }
+
+    function check(btn, ans) {
+        if(btn.style.pointerEvents === 'none') return;
+        document.querySelectorAll('.opt-btn').forEach(b => b.style.pointerEvents = 'none');
+
+        if(ans === game.q.term) {
+            // Correct
+            btn.classList.add('correct');
+            game.score += 10;
+            setTimeout(nextGameQ, 800);
+        } else {
+            // Wrong
+            btn.classList.add('wrong');
+            document.getElementById('game-container').classList.add('shake-it');
+            setTimeout(()=> document.getElementById('game-container').classList.remove('shake-it'), 400);
+
+            document.querySelectorAll('.opt-btn').forEach(b => {
+                if(b.innerText.includes(game.q.term)) b.classList.add('correct');
+            });
+
+            game.lives--;
+            updateGameHUD();
+
+            if(game.lives <= 0) {
+                setTimeout(() => finishGame(false), 1200);
+            } else {
+                // If NoRepeat mode, the question is already popped. We lost a life on it.
+                // Should we put it back? Usually in games, if you miss, it's gone or retried.
+                // Here, let's assume it's gone (hard mode) or we can push it back.
+                // Simple version: It's gone.
+                setTimeout(nextGameQ, 1200);
+            }
+        }
+    }
+
+    function finishGame(win) {
+        game.active = false;
+        document.getElementById('screen-play').style.display = 'none';
+        document.getElementById('screen-over').style.display = 'flex';
+        document.getElementById('final-score').innerText = game.score;
+        
+        const title = document.getElementById('go-title');
+        const msg = document.getElementById('go-msg');
+        
+        if(win) {
+            title.style.color = 'var(--success)';
+            title.innerText = "MISSION COMPLETE!";
+            msg.innerText = `🔥 You answered all questions! Final Score: ${game.score}`;
+        } else {
+            title.style.color = 'var(--error)';
+            title.innerText = "GAME OVER";
+            if(game.score > 200) msg.innerText = "🏆 Great score, but you ran out of lives!";
+            else msg.innerText = "📚 Keep practicing!";
+        }
+    }
+
+    // --- Init ---
+    window.onload = function() {
+        if(typeof rawData !== 'undefined' && rawData.length > 0) {
+            selectAllCh(); // Default select all
+            renderList(rawData);
+            fcPool = [...rawData];
+            loadCard();
+        }
+    };
+</script>
+</body>
+</html>
