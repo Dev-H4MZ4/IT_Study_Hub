@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSP Lab 1 - Interactive Simulator</title>
+    
+    <!-- استدعاء الخطوط العصرية -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- مكتبات الرسم والأكواد -->
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-gradient: linear-gradient(135deg, #0ea5e9, #3b82f6);
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            --radius-lg: 16px;
+            --radius-md: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-color); 
+            color: var(--text-main);
+            margin: 0; 
+            padding: 0 0 40px 0; 
+            line-height: 1.7;
+        }
+
+        .app-header {
+            background: var(--card-bg);
+            padding: 15px 30px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .app-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            font-weight: 800;
+        }
+
+        .app-header h1 span {
+            color: var(--primary);
+        }
+
+        .container { 
+            display: flex; 
+            gap: 25px; 
+            width: 100%; 
+            max-width: 1250px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .sidebar, .main-content {
+            background: var(--card-bg); 
+            border-radius: var(--radius-lg); 
+            box-shadow: var(--shadow-md); 
+        }
+
+        .sidebar { 
+            padding: 25px; 
+            flex: 1; 
+            min-width: 300px; 
+            max-width: 350px; 
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .main-content { 
+            padding: 30px; 
+            flex: 2; 
+            min-width: 280px; 
+            overflow: visible; 
+        }
+        
+        @media (max-width: 900px) { 
+            .container { flex-direction: column; }
+            .sidebar { max-width: 100%; width: 100%; position: relative; top: 0;}
+            .main-content { width: 100%; padding: 20px;}
+        }
+        
+        h2 { 
+            color: var(--text-main); 
+            margin-top: 0; 
+            border-bottom: 2px solid var(--border); 
+            padding-bottom: 12px; 
+            font-size: 1.4rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h3 { color: #334155; margin-bottom: 10px; font-size: 1.15rem; font-weight: 700;}
+        
+        .input-group { margin-bottom: 15px; }
+        
+        label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            font-size: 0.95rem; 
+            color: var(--text-muted);
+        }
+        
+        input[type="number"], select { 
+            width: 100%; 
+            padding: 12px 15px; 
+            border: 2px solid var(--border); 
+            border-radius: var(--radius-md); 
+            font-size: 1rem;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
+        }
+        
+        .controls { display: none; animation: fadeIn 0.4s ease; }
+        .controls.active { display: block; }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: #f8fafc;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-label {
+            font-weight: 700;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1; transition: .4s; border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .run-btn { 
+            width: 100%; padding: 14px; margin-top: 10px; background: var(--primary-gradient); 
+            color: white; border: none; border-radius: var(--radius-md); font-size: 1.1rem; 
+            font-weight: 700; font-family: 'Cairo', sans-serif; cursor: pointer; 
+            transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+        .run-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4); }
+        .run-btn:active { transform: translateY(1px); }
+
+        .array-box { 
+            background: #f1f5f9; padding: 18px; border-radius: var(--radius-md); margin-top: 25px; 
+            border: 1px dashed #cbd5e1; font-family: 'Fira Code', monospace; font-size: 1.05rem; 
+            direction: ltr; text-align: left; color: #0f172a; font-weight: 500; overflow-x: auto; word-wrap: break-word;
+        }
+        .array-box span.lbl { color: #0ea5e9; font-weight: 700;}
+
+        .alert-box { padding: 20px; border-radius: var(--radius-md); margin-top: 20px; font-size: 0.95rem; }
+        .explanation { background: #f0f9ff; border-right: 5px solid #0ea5e9; }
+        .questions { background: #fffbeb; border-right: 5px solid #f59e0b; }
+        .code-explanation { background: #f8fafc; border-right: 5px solid #64748b; border-left: 1px solid var(--border); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);}
+        
+        .code-explanation ul { margin: 0; padding-right: 25px; }
+        .code-explanation li { margin-bottom: 10px; line-height: 1.8;}
+        .code-explanation code { 
+            background: #e2e8f0; padding: 3px 6px; border-radius: 4px; font-family: 'Fira Code', monospace; 
+            color: #b91c1c; font-size: 0.9rem; font-weight: 500;
+        }
+
+        .code-container { 
+            position: relative; margin-top: 25px; border-radius: var(--radius-md); overflow: hidden; 
+            background: #282c34; box-shadow: var(--shadow-md);
+        }
+        .code-header { 
+            background: #21252b; padding: 10px 15px; display: flex; justify-content: space-between; 
+            align-items: center; direction: ltr;
+        }
+        
+        .mac-dots { display: flex; gap: 6px; }
+        .mac-dots div { width: 12px; height: 12px; border-radius: 50%; }
+        .mac-dots .red { background: #ff5f56; }
+        .mac-dots .yellow { background: #ffbd2e; }
+        .mac-dots .green { background: #27c93f; }
+
+        .lang-label { color: #abb2bf; font-family: 'Fira Code', monospace; font-size: 0.8rem; position: absolute; left: 50%; transform: translateX(-50%); }
+
+        .copy-btn { 
+            background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); 
+            padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-family: 'Cairo', sans-serif; transition: 0.2s;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.2); }
+        
+        pre { margin: 0 !important; padding: 20px; overflow-x: auto;} 
+        pre::-webkit-scrollbar { height: 8px; }
+        pre::-webkit-scrollbar-thumb { background: #4b5363; border-radius: 4px; }
+        pre::-webkit-scrollbar-track { background: #282c34; }
+        
+        code { font-family: 'Fira Code', monospace; font-size: 1rem; direction: ltr !important; text-align: left !important; display: block; line-height: 1.6; }
+
+        #plotArea { animation: fadeIn 0.5s ease-in-out; border-radius: var(--radius-md); overflow: hidden; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <h1>🔬 DSP Lab 1 <span>Simulator</span></h1>
+</header>
+
+<div class="container">
+    <div class="sidebar">
+        <h2>⚙️ إعدادات التجربة</h2>
+        
+        <div class="input-group">
+            <label>اختر نوع الإشارة (التجربة):</label>
+            <select id="signalType" onchange="switchControls()">
+                <option value="impulse">Step 1: إشارة النبضة (Impulse)</option>
+                <option value="step">Step 2: إشارة الخطوة (Step)</option>
+                <option value="sinusoidal">Step 3: الإشارة الجيبية (Sinusoidal)</option>
+                <option value="random">Step 4: الإشارة العشوائية (Random)</option>
+            </select>
+        </div>
+
+        <div id="controls-basic" class="controls active">
+            <div class="input-group">
+                <label>قيمة الإزاحة (k):</label>
+                <input type="number" id="k_val" value="0">
+            </div>
+            <div class="input-group">
+                <label>بداية الفترة (n1):</label>
+                <input type="number" id="n1_val" value="-5">
+            </div>
+            <div class="input-group">
+                <label>نهاية الفترة (n2):</label>
+                <input type="number" id="n2_val" value="5">
+            </div>
+        </div>
+
+        <div id="controls-sinusoidal" class="controls">
+            <div class="input-group">
+                <label>نهاية الفترة الزمنية (n):</label>
+                <input type="number" id="n_max" value="10">
+            </div>
+        </div>
+
+        <div id="controls-random" class="controls">
+            <div class="input-group">
+                <label>المتوسط (Mean):</label>
+                <input type="number" id="mean_val" value="10">
+            </div>
+            <div class="input-group">
+                <label>التباين (Variance):</label>
+                <input type="number" id="var_val" value="2">
+            </div>
+            <div class="input-group">
+                <label>عدد العينات (Samples):</label>
+                <input type="number" id="samples_val" value="100">
+            </div>
+        </div>
+
+        <div class="toggle-container">
+            <label class="toggle-label" for="continuousToggle">توصيل النقاط (Continuous)</label>
+            <label class="switch">
+                <input type="checkbox" id="continuousToggle" onchange="generateContent()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <button class="run-btn" onclick="generateContent()">▶ تشغيل المحاكاة</button>
+    </div>
+
+    <div class="main-content">
+        <h2 id="plotTitle">📊 الرسم البياني</h2>
+        <div id="plotArea" style="width:100%; height:420px;"></div>
+
+        <div id="arrayOutput" class="array-box" style="display: none;"></div>
+        
+        <div class="alert-box explanation" id="theoryExp"></div>
+
+        <div class="code-container">
+            <div class="code-header">
+                <div class="mac-dots">
+                    <div class="red"></div><div class="yellow"></div><div class="green"></div>
+                </div>
+                <span class="lang-label">Python</span>
+                <button class="copy-btn" onclick="copyCode()">نسخ الكود</button>
+            </div>
+            <pre><code id="pythonCode" class="language-python"></code></pre>
+        </div>
+
+        <div class="alert-box code-explanation">
+            <h3>💡 شرح الكود (سطر بسطر):</h3>
+            <div id="codeExplanationDetails"></div>
+        </div>
+
+        <div class="alert-box questions" id="labQuestions"></div>
+    </div>
+</div>
+
+<script>
+    function switchControls() {
+        let type = document.getElementById("signalType").value;
+        document.querySelectorAll('.controls').forEach(el => el.classList.remove('active'));
+        if(type === 'impulse' || type === 'step') document.getElementById('controls-basic').classList.add('active');
+        else if(type === 'sinusoidal') document.getElementById('controls-sinusoidal').classList.add('active');
+        else if(type === 'random') document.getElementById('controls-random').classList.add('active');
+    }
+
+    function randomNormal(mean, stdDev) {
+        let u1 = Math.random(); let u2 = Math.random();
+        let z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        return z0 * stdDev + mean;
+    }
+
+    function generateContent() {
+        let type = document.getElementById("signalType").value;
+        let isContinuous = document.getElementById("continuousToggle").checked; 
+        
+        let x = [], y = [];
+        let title = "", code = "", theory = "", questions = "", codeExp = "";
+        let showArray = false;
+
+        let plotDiv = document.getElementById("plotArea");
+        plotDiv.style.animation = 'none';
+        plotDiv.offsetHeight; 
+        plotDiv.style.animation = null; 
+
+        // -------------------------------------------------------------------
+        // التعديل هنا: كود مبسط جداً بدون ألوان أو تفاصيل إضافية
+        // -------------------------------------------------------------------
+        let contCode = isContinuous ? `\nplt.plot(n, x)  # رسم خط متصل (Continuous)` : ``;
+        let contExp = isContinuous ? `<li><code>plt.plot(n, x)</code>: تمت إضافة هذا السطر لأنك قمت بتفعيل خيار "توصيل النقاط". دالة <code>plot</code> تقوم برسم خط متصل (Continuous) يمر بجميع النقاط ليوضح لك غلاف ومسار الإشارة (Envelope).</li>` : ``;
+
+        if(type === 'impulse' || type === 'step') {
+            let k = parseInt(document.getElementById("k_val").value);
+            let n1 = parseInt(document.getElementById("n1_val").value);
+            let n2 = parseInt(document.getElementById("n2_val").value);
+            
+            for(let n = n1; n <= n2; n++) {
+                x.push(n);
+                if(type === 'impulse') y.push(n - k === 0 ? 1 : 0);
+                else y.push(n - k >= 0 ? 1 : 0);
+            }
+            showArray = true;
+
+            if(type === 'impulse') {
+                title = `📈 Unit Sample Sequence δ(n ${k > 0 ? '- '+k : k < 0 ? '+ '+Math.abs(k) : ''})`;
+                theory = `<strong>شرح التجربة النظري:</strong><br>إشارة النبضة (Impulse Sequence) هي أساس معالجة الإشارات الرقمية. فكر فيها كـ "صدمة" أو "نبضة كهربائية" تحدث في لحظة زمنية واحدة فقط وتنعدم في الباقي. في معادلتنا، النبضة تحدث عندما ينعدم ما بداخل القوس (n - k = 0)، أي عندما تكون n = k. في هذه التجربة، اخترنا k = ${k}، لذلك الإشارة تساوي 1 عند ${k} وتساوي 0 في باقي الأماكن.`;
+                code = `import numpy as np\nimport matplotlib.pyplot as plt\n\ndef impseq(k, n1, n2):\n    n = np.arange(${n1}, ${n2} + 1)\n    x = (n - (${k})) == 0\n    return x.astype(int), n\n\nx, n = impseq(${k}, ${n1}, ${n2})\nprint("n:", n)\nprint("x:", x)\n\nplt.stem(n, x)${contCode}\nplt.show()`;
+                codeExp = `<ul>
+                    <li><code>import numpy as np</code>: استدعاء مكتبة Numpy المخصصة للعمليات الرياضية والتعامل مع المصفوفات، وإعطاؤها اختصار np.</li>
+                    <li><code>import matplotlib.pyplot as plt</code>: استدعاء مكتبة Matplotlib المسؤولة عن رسم المخططات البيانية (Graphs).</li>
+                    <li><code>def impseq(k, n1, n2):</code>: تعريف دالة (Function) جديدة اسمها impseq تأخذ 3 مدخلات: مقدار الإزاحة k، وبداية الفترة n1، ونهايتها n2.</li>
+                    <li><code>n = np.arange(n1, n2 + 1)</code>: إنشاء مصفوفة محور السينات (الزمن n) تبدأ من ${n1} وتنتهي عند ${n2}.</li>
+                    <li><code>x = (n - k) == 0</code>: هذا هو قلب الدالة! يقوم باختبار كل قيمة في n: هل (n - k) يساوي صفر؟ إذا نعم يضع True، وإذا لا يضع False.</li>
+                    <li><code>return x.astype(int), n</code>: تحويل قيم True/False إلى 1 و 0 (لأن الإشارة الرقمية تتعامل مع أرقام) ثم إرجاع القيمتين.</li>
+                    <li><code>plt.stem(n, x)</code>: رسم الإشارة الرقمية بشكل أعمدة (Stem Plot) كما هو متعارف عليه في الـ DSP.</li>
+                    ${contExp}
+                </ul>`;
+                questions = `<strong>✏️ Progress Question 1 Solution:</strong><br>قم بنقل المصفوفات الظاهرة في المربع الرمادي أعلاه (n و x) وارسمها في تقريرك باستخدام مسطرة، بحيث ترسم خطاً طوله 1 فقط عند النقطة n = ${k}، وباقي النقاط قيمتها صفر.`;
+            } else {
+                title = `📈 Unit Step Sequence μ(n ${k > 0 ? '- '+k : k < 0 ? '+ '+Math.abs(k) : ''})`;
+                theory = `<strong>شرح التجربة النظري:</strong><br>إشارة الخطوة (Unit Step Sequence) هي إشارة تشبه "مفتاح التشغيل" (Switch). تكون الإشارة مطفأة (0) حتى نصل إلى لحظة معينة، وعندها تشتغل وتصبح قيمتها (1) وتستمر مشتغلة إلى المالانهاية. اللحظة التي تشتغل فيها هي عندما يكون (n - k ≥ 0)، أي n ≥ k. هنا الإشارة تبدأ عند k = ${k}.`;
+                code = `import numpy as np\nimport matplotlib.pyplot as plt\n\ndef stepseq(k, n1, n2):\n    n = np.arange(${n1}, ${n2} + 1)\n    x = (n - (${k})) >= 0\n    return x.astype(int), n\n\nx, n = stepseq(${k}, ${n1}, ${n2})\nprint("n:", n)\nprint("x:", x)\n\nplt.stem(n, x)${contCode}\nplt.show()`;
+                codeExp = `<ul>
+                    <li><code>def stepseq(k, n1, n2):</code>: تعريف دالة اسمها stepseq.</li>
+                    <li><code>x = (n - k) >= 0</code>: الفرق الوحيد بينها وبين إشارة النبضة هو علامة <code>>=</code> (أكبر من أو يساوي). هذا يعني أن الكود سيعطي True (أي 1) لكل قيم n التي تأتي بعد النقطة k وتساويها، ويعطي False (أي 0) للقيم التي قبلها.</li>
+                    <li><code>plt.stem(n, x)</code>: أمر الرسم البياني للإشارات المتقطعة.</li>
+                    ${contExp}
+                </ul>`;
+                questions = `<strong>✏️ Progress Question 2 Solution:</strong><br>قم بنقل المصفوفات الظاهرة أعلاه (n و x). في الرسم، قم برسم أعمدة طولها 1 ابتداءً من النقطة n = ${k} وحتى نهاية الخط، وما قبلها يكون صفراً.`;
+            }
+        } 
+        else if(type === 'sinusoidal') {
+            let n_max = parseInt(document.getElementById("n_max").value);
+            for(let n = 0; n <= n_max; n++) {
+                x.push(n);
+                y.push(3 * Math.cos(0.1 * Math.PI * n + Math.PI/3) + 2 * Math.sin(0.5 * Math.PI * n));
+            }
+            title = "〰️ Sinusoidal Sequence";
+            showArray = false;
+            theory = `<strong>شرح التجربة النظري:</strong><br>الإشارات الجيبية (Sinusoidal) هي إشارات متذبذبة تتكرر بشكل دوري. في الطبيعة (مثل الصوت) تكون الإشارات متصلة (Continuous)، ولكن في معالجة الإشارات الرقمية، نقوم بأخذ "عينات" (Samples) منها عند لحظات زمنية محددة n. في هذا اللاب، نجمع موجتين: الأولى جيب التمام (Cos) والثانية جيب (Sin) بترددات وزوايا مختلفة لنرى كيف يتشكل ناتج تداخلهما في العالم الرقمي.`;
+            code = `import numpy as np\nimport matplotlib.pyplot as plt\n\nn = np.arange(0, ${n_max} + 1)\nx = 3 * np.cos(0.1 * np.pi * n + np.pi/3) + 2 * np.sin(0.5 * np.pi * n)\n\nplt.stem(n, x)${contCode}\nplt.xlabel('n')\nplt.ylabel('x[n]')\nplt.title('Discrete Signal')\nplt.grid(True)\nplt.show()`;
+            codeExp = `<ul>
+                <li><code>n = np.arange(0, ${n_max} + 1)</code>: تحديد الفترة الزمنية لأخذ العينات من 0 وحتى ${n_max}.</li>
+                <li><code>x = ...</code>: هذه هي المعادلة الرياضية المعطاة في الملزمة محولة لكود. نستخدم <code>np.cos</code> لدالة جتا، و <code>np.sin</code> لدالة جا. الرمز <code>np.pi</code> يعادل قيمة π (باي).</li>
+                <li><code>plt.stem(n, x)</code>: دالة الرسم للأعمدة المتقطعة (Discrete Plot).</li>
+                ${contExp}
+                <li><code>plt.xlabel('n') & plt.ylabel('x[n]')</code>: هذه الأسطر لتسمية محاور المخطط (س وص) ليكون الرسم احترافياً.</li>
+                <li><code>plt.grid(True)</code>: إظهار شبكة المربعات في الخلفية لتسهيل قراءة القيم.</li>
+            </ul>`;
+            questions = `<strong>✏️ Progress Question 3 Solution:</strong><br><strong>السؤال:</strong> Draw the output.<br><strong>الحل:</strong> الحل هو <u>الرسم البياني الظاهر أعلاه</u>. انسخ شكل الأعمدة المتموجة الناتجة من تداخل الإشارتين في تقريرك.`;
+        }
+        else if(type === 'random') {
+            let mean = parseFloat(document.getElementById("mean_val").value);
+            let variance = parseFloat(document.getElementById("var_val").value);
+            let samples = parseInt(document.getElementById("samples_val").value);
+            let sd = Math.sqrt(variance);
+
+            for(let n = 0; n < samples; n++) {
+                x.push(n); y.push(randomNormal(mean, sd));
+            }
+            title = "🔀 Gaussian Random Sequence";
+            showArray = false;
+            theory = `<strong>شرح التجربة النظري:</strong><br>الإشارات العشوائية تُستخدم لمحاكاة "الضوضاء" (Noise) التي تتعرض لها الإشارات في الواقع (مثل التشويش في الاتصالات). نستخدم التوزيع الطبيعي "الجَرَسِي" (Gaussian)، والذي يتم التحكم فيه بقيمتين أساسيتين: <strong>المتوسط (Mean):</strong> وهو الرقم الذي تتمركز وتتجمع حوله أغلب العينات العشوائية. <strong>التباين (Variance):</strong> وهو مقدار تشتت وانتشار هذه العينات بعيداً عن المتوسط.`;
+            code = `import numpy as np\nimport matplotlib.pyplot as plt\n\nVAR = ${variance}       # Variance\nSD = np.sqrt(VAR) # Standard Deviation\nM = ${mean}        # Mean\n\nx = M + SD * np.random.randn(${samples})\nn = np.arange(0, ${samples})\n\nplt.stem(n, x)${contCode}\nplt.show()`;
+            codeExp = `<ul>
+                <li><code>VAR = ${variance}</code>: تعريف متغير يحمل قيمة التباين (مدى التشتت).</li>
+                <li><code>SD = np.sqrt(VAR)</code>: حساب الانحراف المعياري (Standard Deviation) وهو ببساطة الجذر التربيعي (sqrt) للتباين. نستخدمه في المعادلة الرياضية لتوليد الضوضاء.</li>
+                <li><code>M = ${mean}</code>: تعريف متغير يحمل قيمة المتوسط.</li>
+                <li><code>np.random.randn(${samples})</code>: هذه الدالة من مكتبة Numpy تقوم بتوليد ${samples} عينة عشوائية مركزها الصفر.</li>
+                <li><code>x = M + SD * ...</code>: نقوم بضرب العينات العشوائية في الانحراف المعياري لزيادة تششتها، ثم نجمع عليها المتوسط M لكي نزحف تمركزها من الصفر إلى القيمة ${mean}.</li>
+                <li><code>plt.stem(n, x)</code>: دالة الرسم للأعمدة المتقطعة.</li>
+                ${contExp}
+            </ul>`;
+            questions = `<strong>✏️ Step 4 Solution (Comparison & Notes):</strong><br>
+            <strong>السؤال:</strong> Re-execute the above code with the same mean value and variance = 10 and 0.1? Compare the figures and provide your notes.<br>
+            <strong>الحل والملاحظات (Notes):</strong><br>
+            لتنفيذ المطلوب، جرب إدخال (Variance=10) وشاهد الرسم، ثم (Variance=0.1) وشاهده مرة أخرى.<br><br>
+            <strong>ملاحظات المقارنة (Comparison Notes) اكتبها في تقريرك:</strong><br>
+            <ul style="margin-top:5px; padding-right:20px;">
+                <li><strong>When Variance = 10:</strong> The random data points are spread out significantly and deviate widely from the mean value (10).<br><em>(عربياً: عندما يكون التباين 10، تتشتت النقاط وتنتشر بشكل واسع جداً بعيداً عن خط المتوسط 10).</em></li>
+                <li><strong>When Variance = 0.1:</strong> The random data points are tightly clustered and concentrated very close to the mean value (10).<br><em>(عربياً: عندما يكون التباين 0.1، تتجمع النقاط وتتركز بشكل متقارب ومكثف جداً حول خط المتوسط 10).</em></li>
+            </ul>`;
+        }
+
+        document.getElementById("plotTitle").innerText = title;
+        document.getElementById("theoryExp").innerHTML = theory;
+        document.getElementById("codeExplanationDetails").innerHTML = codeExp;
+        document.getElementById("labQuestions").innerHTML = questions;
+        
+        let arrayOutputDiv = document.getElementById("arrayOutput");
+        if(showArray) {
+            arrayOutputDiv.style.display = "block";
+            arrayOutputDiv.innerHTML = `<span class="lbl">n:</span> [${x.join(", ")}]<br><span class="lbl">x:</span> [${y.join(", ")}]`;
+        } else {
+            arrayOutputDiv.style.display = "none";
+        }
+
+        let codeBlock = document.getElementById("pythonCode");
+        codeBlock.textContent = code;
+        delete codeBlock.dataset.highlighted;
+        hljs.highlightElement(codeBlock);
+
+        let traceMode = isContinuous ? 'lines+markers' : 'markers';
+        
+        let trace = { 
+            x: x, y: y, 
+            type: 'scatter', 
+            mode: traceMode, 
+            marker: { color: '#0ea5e9', size: 7, line: {color: '#0284c7', width: 1} },
+            line: { color: 'rgba(14, 165, 233, 0.4)', width: 2.5, shape: 'linear' }, 
+            error_y: { type: 'data', symmetric: false, arrayminus: y, array: y.map(()=>0), color: '#94a3b8', thickness: 1.5, width: 0 }
+        };
+        
+        let layout = { 
+            margin: { t: 20, b: 40, l: 40, r: 20 }, 
+            xaxis: { zeroline: true, title: 'n (الزمن)', gridcolor: '#f1f5f9', zerolinecolor: '#cbd5e1'}, 
+            yaxis: { zeroline: true, title: 'x[n] (القيمة)', gridcolor: '#f1f5f9', zerolinecolor: '#cbd5e1'},
+            dragmode: 'pan',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { family: 'Cairo, sans-serif' }
+        };
+        
+        let config = { responsive: true, displaylogo: false, scrollZoom: true };
+        
+        Plotly.newPlot('plotArea', [trace], layout, config);
+    }
+
+    function copyCode() {
+        const codeText = document.getElementById('pythonCode').innerText;
+        navigator.clipboard.writeText(codeText).then(() => {
+            const btn = document.querySelector('.copy-btn');
+            btn.innerText = 'تم النسخ ✔️';
+            btn.style.background = 'rgba(39, 201, 63, 0.3)';
+            setTimeout(() => {
+                btn.innerText = 'نسخ الكود';
+                btn.style.background = 'rgba(255,255,255,0.1)';
+            }, 2000);
+        });
+    }
+
+    window.onload = () => { switchControls(); generateContent(); };
+</script>
+</body>
+</html>
